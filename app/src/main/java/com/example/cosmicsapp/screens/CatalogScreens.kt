@@ -63,7 +63,7 @@ fun CatalogScreen(navController: NavController) {
         ) {
             Box(
                 modifier = Modifier
-                    .padding(top=24.dp, bottom=40.dp)
+                    .padding(top = 24.dp, bottom = 40.dp)
                     .padding(horizontal = 60.dp)
                     .fillMaxWidth()
                     .height(151.dp),
@@ -73,8 +73,7 @@ fun CatalogScreen(navController: NavController) {
                     painter = painterResource(R.drawable.aksia),
                     contentDescription = "Картинка акции",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
@@ -121,7 +120,6 @@ fun CatalogScreen(navController: NavController) {
                             ) {
                                 Text(
                                     "Ошибка: $errorMessage",
-
                                     style = TextStyle(fontSize = 13.sp, fontFamily = DefaultFont, color = Color(0xFF757575))
                                 )
                             }
@@ -135,7 +133,7 @@ fun CatalogScreen(navController: NavController) {
                             ) {
                                 Text(
                                     "Категории не найдены",
-                                    style = TextStyle(fontSize = 13.sp,fontFamily = DefaultFont, color = Color(0xFF757575))
+                                    style = TextStyle(fontSize = 13.sp, fontFamily = DefaultFont, color = Color(0xFF757575))
                                 )
                             }
                         }

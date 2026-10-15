@@ -10,13 +10,6 @@ data class Category(
 )
 
 @Serializable
-data class Brand(
-    @SerialName("brand_id") val brandId: Long,
-    val name: String,
-    val logo: String? = null
-)
-
-@Serializable
 data class Product(
     @SerialName("product_id") val productId: Long,
     val name: String,

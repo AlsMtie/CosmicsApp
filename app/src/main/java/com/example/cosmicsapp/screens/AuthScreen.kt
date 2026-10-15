@@ -1,10 +1,7 @@
 package com.example.cosmicsapp.screens
 
-import android.R.attr.fontFamily
-import android.R.attr.textStyle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,12 +10,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.cosmicsapp.CosmicsBottomNav
 import com.example.cosmicsapp.CosmicsTopBar
+import com.example.cosmicsapp.CustomButton
+import com.example.cosmicsapp.CustomTextField
 import com.example.cosmicsapp.R
 import com.example.cosmicsapp.supabase
 import com.example.cosmicsapp.ui.theme.DefaultFont
@@ -35,7 +33,6 @@ fun AuthScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     val fieldWidth = 306.dp
-    val fieldHeight = 52.dp
 
     Scaffold(
         topBar = { CosmicsTopBar(showBack = true, onBack = { navController.popBackStack() }) },
@@ -77,58 +74,9 @@ fun AuthScreen(navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = {
-                        Text(
-                            text = "Email",
-                            style = TextStyle(
-                                fontFamily = DefaultFont
-                            ))
-                            },
-                    singleLine = true,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .width(fieldWidth)
-                        .height(fieldHeight),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF5795B5),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedLabelColor = Color(0xFF5795B5),
-                        unfocusedLabelColor = Color(0xFF757575),
-                        cursorColor = Color(0xFF5795B5),
-                        focusedTextColor = Color(0xFF1A1A1A),
-                        unfocusedTextColor = Color(0xFF1A1A1A)
-                    )
-                )
-
+                CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
                 Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text(text = "Пароль", style = TextStyle(fontFamily = DefaultFont)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .width(fieldWidth)
-                        .height(fieldHeight),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF5795B5),
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedLabelColor = Color(0xFF5795B5),
-                        unfocusedLabelColor = Color(0xFF757575),
-                        cursorColor = Color(0xFF5795B5),
-                        focusedTextColor = Color(0xFF1A1A1A),
-                        unfocusedTextColor = Color(0xFF1A1A1A)
-                    )
-                )
+                CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
 
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -152,11 +100,12 @@ fun AuthScreen(navController: NavController) {
                 )
             }
 
-            Button(
+            CustomButton(
+                text = if (isLoading) "Загрузка..." else "Войти",
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
                         errorMessage = "Заполните все поля"
-                        return@Button
+                        return@CustomButton
                     }
                     scope.launch {
                         isLoading = true
@@ -177,28 +126,8 @@ fun AuthScreen(navController: NavController) {
                     }
                 },
                 enabled = !isLoading,
-                modifier = Modifier
-                    .width(345.dp)
-                    .height(58.dp)
-                    .padding(bottom = 24.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFC7DDF2),
-                    contentColor = Color(0xFF000000),
-                    disabledContainerColor = Color(0xFFC7E1F4).copy(alpha = 0.5f),
-                    disabledContentColor = Color(0xFF000000).copy(alpha = 0.5f)
-                )
-            ) {
-                Text(
-                    text = if (isLoading) "Загрузка..." else "Войти",
-                    style = TextStyle(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = DefaultFont,
-                        color = Color(0xFF000000)
-                    )
-                )
-            }
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
         }
     }
 }
