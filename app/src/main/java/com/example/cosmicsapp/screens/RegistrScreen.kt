@@ -2,6 +2,8 @@ package com.example.cosmicsapp.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,6 +49,8 @@ fun RegisterScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -73,42 +77,40 @@ fun RegisterScreen(navController: NavController) {
                 )
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CustomTextField(value = name, onValueChange = { name = it }, placeholder = "Имя", width = fieldWidth)
-                Spacer(modifier = Modifier.height(12.dp))
-                CustomTextField(value = lastName, onValueChange = { lastName = it }, placeholder = "Фамилия", width = fieldWidth)
-                Spacer(modifier = Modifier.height(12.dp))
-                CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
-                Spacer(modifier = Modifier.height(12.dp))
-                CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
-                Spacer(modifier = Modifier.height(12.dp))
-                CustomTextField(value = confirmPassword, onValueChange = { confirmPassword = it }, placeholder = "Повтор пароля", isPassword = true, width = fieldWidth)
+            Spacer(modifier = Modifier.height(40.dp))
 
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = errorMessage!!,
-                        style = TextStyle(fontSize = 12.sp, color = Color(0xFFD32F2F), fontFamily = DefaultFont)
-                    )
-                }
+            CustomTextField(value = name, onValueChange = { name = it }, placeholder = "Имя", width = fieldWidth)
+            Spacer(modifier = Modifier.height(12.dp))
+            CustomTextField(value = lastName, onValueChange = { lastName = it }, placeholder = "Фамилия", width = fieldWidth)
+            Spacer(modifier = Modifier.height(12.dp))
+            CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
+            Spacer(modifier = Modifier.height(12.dp))
+            CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
+            Spacer(modifier = Modifier.height(12.dp))
+            CustomTextField(value = confirmPassword, onValueChange = { confirmPassword = it }, placeholder = "Повтор пароля", isPassword = true, width = fieldWidth)
 
-                Spacer(modifier = Modifier.height(16.dp))
-
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Уже есть аккаунт? Войти",
-                    style = TextStyle(
-                        fontSize = 13.sp,
-                        color = Color(0xFF6D6D6D),
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = DefaultFont
-                    ),
-                    modifier = Modifier.clickable { navController.popBackStack() }
+                    text = errorMessage!!,
+                    style = TextStyle(fontSize = 12.sp, color = Color(0xFFD32F2F), fontFamily = DefaultFont)
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Уже есть аккаунт? Войти",
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    color = Color(0xFF6D6D6D),
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = DefaultFont
+                ),
+                modifier = Modifier.clickable { navController.popBackStack() }
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
 
             CustomButton(
                 text = if (isLoading) "Загрузка..." else "Зарегистрироваться",
@@ -132,13 +134,11 @@ fun RegisterScreen(navController: NavController) {
                         isLoading = true
                         errorMessage = null
                         try {
-                            // 1. Регистрация в Auth
                             supabase.auth.signUpWith(Email) {
                                 this.email = email.trim()
                                 this.password = password
                             }
 
-                            // 2. Вставка в public.Users
                             val authUserId = supabase.auth.currentUserOrNull()?.id ?: ""
                             supabase.postgrest["Users"].insert(
                                 mapOf(

@@ -59,7 +59,6 @@ fun CosmicsBottomNav(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
-    // Проверяем, авторизован ли пользователь
     val isAuthorized = remember(currentRoute) {
         supabase.auth.currentUserOrNull() != null
     }
@@ -80,7 +79,6 @@ fun CosmicsBottomNav(
             Triple(profileRoute, R.drawable.user, "Профиль")
         )
         items.forEach { (route, iconRes, label) ->
-            val isSelected = currentRoute == route
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.clickable { onNavigate(route) }
@@ -150,45 +148,50 @@ fun CustomTextField(
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        Column {
-            if (hasValue) {
-                Text(
-                    text = placeholder,
-                    style = TextStyle(
-                        fontSize = 10.sp,
-                        color = Color(0xFF757575),
-                        fontFamily = DefaultFont
-                    )
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = TextStyle(
-                    fontSize = 13.sp,
-                    color = Color(0xFF1A1A1A),
+        // Плавающий label сверху, если есть значение
+        if (hasValue) {
+            Text(
+                text = placeholder,
+                style = TextStyle(
+                    fontSize = 10.sp,
+                    color = Color(0xFF757575),
                     fontFamily = DefaultFont
                 ),
-                visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (!hasValue) {
-                            Text(
-                                text = placeholder,
-                                style = TextStyle(
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF757575),
-                                    fontFamily = DefaultFont
-                                )
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 6.dp)
             )
         }
+
+        // Основное поле ввода
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = TextStyle(
+                fontSize = 13.sp,
+                color = Color(0xFF1A1A1A),
+                fontFamily = DefaultFont
+            ),
+            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = if (hasValue) 14.dp else 0.dp),
+            decorationBox = { innerTextField ->
+                Box {
+                    if (!hasValue) {
+                        Text(
+                            text = placeholder,
+                            style = TextStyle(
+                                fontSize = 13.sp,
+                                color = Color(0xFF757575),
+                                fontFamily = DefaultFont
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
     }
 }

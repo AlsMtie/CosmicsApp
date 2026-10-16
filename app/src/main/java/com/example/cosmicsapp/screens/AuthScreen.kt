@@ -2,6 +2,8 @@ package com.example.cosmicsapp.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +45,8 @@ fun AuthScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()                     // ← учёт клавиатуры
+                .verticalScroll(rememberScrollState())  // ← прокрутка
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -69,36 +73,34 @@ fun AuthScreen(navController: NavController) {
                 )
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
-                Spacer(modifier = Modifier.height(16.dp))
-                CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
+            Spacer(modifier = Modifier.height(60.dp))
 
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = errorMessage!!,
-                        style = TextStyle(fontSize = 12.sp, color = Color(0xFFD32F2F), fontFamily = DefaultFont)
-                    )
-                }
+            CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
+            Spacer(modifier = Modifier.height(16.dp))
+            CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
 
-                Spacer(modifier = Modifier.height(20.dp))
-
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Регистрация",
-                    style = TextStyle(
-                        fontSize = 13.sp,
-                        color = Color(0xFF6D6D6D),
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = DefaultFont
-                    ),
-                    modifier = Modifier.clickable { navController.navigate("register") }
+                    text = errorMessage!!,
+                    style = TextStyle(fontSize = 12.sp, color = Color(0xFFD32F2F), fontFamily = DefaultFont)
                 )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Регистрация",
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    color = Color(0xFF6D6D6D),
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = DefaultFont
+                ),
+                modifier = Modifier.clickable { navController.navigate("register") }
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
 
             CustomButton(
                 text = if (isLoading) "Загрузка..." else "Войти",
