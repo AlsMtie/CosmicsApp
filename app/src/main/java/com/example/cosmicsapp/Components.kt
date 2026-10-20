@@ -1,25 +1,29 @@
 package com.example.cosmicsapp
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.cosmicsapp.ui.theme.DefaultFont
+import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
 
 @Composable
@@ -30,26 +34,27 @@ fun CosmicsTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(107.dp)
-            .background(Color(0xFFC9DFF4))
-            .padding(horizontal = 20.dp),
+            .background(BrandBlue)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .height(96.dp)
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showBack) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = onBack, modifier = Modifier.size(38.dp)) {
                 Icon(
-                    painter = painterResource(id = R.drawable.arrow_back),
-                    contentDescription = "Back",
-                    tint = Color(0xFF102C3A),
-                    modifier = Modifier.size(20.dp)
+                    painter = painterResource(R.drawable.arrow_back),
+                    contentDescription = "Назад",
+                    tint = BrandInk,
+                    modifier = Modifier.size(22.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(Modifier.width(4.dp))
         }
-        Icon(
+        Image(
             painter = painterResource(R.drawable.logo),
-            contentDescription = "logo",
-            modifier = Modifier.size(141.dp, 55.dp)
+            contentDescription = "COSMICS",
+            modifier = Modifier.size(width = 141.dp, height = 55.dp)
         )
     }
 }
@@ -59,37 +64,61 @@ fun CosmicsBottomNav(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
-    val isAuthorized = remember(currentRoute) {
-        supabase.auth.currentUserOrNull() != null
-    }
-    val profileRoute = if (isAuthorized) "profile" else "login"
+    val profileRoute = if (supabase.auth.currentUserOrNull() != null) "profile" else "login"
+    val selectedCatalog = currentRoute in setOf("catalog", "category", "product")
+    val selectedProfile = currentRoute in setOf("profile", "login", "register", "order_history", "order_detail")
 
-    Row(
+    Surface(
+        color = BrandSurface,
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .background(Color(0xFFFFFFFF))
-            .border(1.dp, Color(0xFFE0E0E0)),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+            .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        val items = listOf(
-            Triple("cart", R.drawable.shopping_bag, "Корзина"),
-            Triple("catalog", R.drawable.main_logo, "Каталог"),
-            Triple(profileRoute, R.drawable.user, "Профиль")
-        )
-        items.forEach { (route, iconRes, label) ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onNavigate(route) }
-            ) {
-                Icon(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = label,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth().height(73.dp),
+            horizontalArrangement = Arrangement.spacedBy(100.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomNavIcon(
+                iconRes = R.drawable.shopping_bag,
+                label = "Корзина",
+                selected = currentRoute == "cart",
+                onClick = { onNavigate("cart") }
+            )
+            BottomNavIcon(
+                iconRes = R.drawable.main_logo,
+                label = "Каталог",
+                selected = selectedCatalog,
+                onClick = { onNavigate("catalog") }
+            )
+            BottomNavIcon(
+                iconRes = R.drawable.user,
+                label = "Профиль",
+                selected = selectedProfile,
+                onClick = { onNavigate(profileRoute) }
+            )
         }
+    }
+}
+
+@Composable
+private fun BottomNavIcon(
+    iconRes: Int,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier.size(30.dp).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = label,
+            tint = if (selected) BrandPrimary else BrandInk,
+            modifier = Modifier.size(28.dp)
+        )
     }
 }
 
@@ -100,30 +129,23 @@ fun CustomButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     width: Dp = 345.dp,
-    height: Dp = 58.dp
+    height: Dp = 42.dp
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.width(width).height(height),
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.widthIn(max = width).fillMaxWidth().height(height),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFC7DDF2),
-            contentColor = Color(0xFF000000),
-            disabledContainerColor = Color(0xFFC7E1F4).copy(alpha = 0.5f),
-            disabledContentColor = Color(0xFF000000).copy(alpha = 0.5f)
+            containerColor = BrandBlue,
+            contentColor = BrandInk,
+            disabledContainerColor = BrandBlue.copy(alpha = 0.45f),
+            disabledContentColor = BrandMuted
         ),
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 1.dp)
     ) {
-        Text(
-            text = text,
-            style = TextStyle(
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = DefaultFont,
-                color = Color(0xFF000000)
-            )
-        )
+        Text(text, fontFamily = DefaultFont, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -135,63 +157,92 @@ fun CustomTextField(
     isPassword: Boolean = false,
     modifier: Modifier = Modifier,
     width: Dp = 306.dp,
-    height: Dp = 52.dp
+    height: Dp = 43.dp,
+    readOnly: Boolean = false
 ) {
     val hasValue = value.isNotEmpty()
+    val keyboardType = when {
+        isPassword -> KeyboardType.Password
+        placeholder.contains("email", ignoreCase = true) -> KeyboardType.Email
+        placeholder.contains("телефон", ignoreCase = true) -> KeyboardType.Phone
+        else -> KeyboardType.Text
+    }
 
     Box(
         modifier = modifier
-            .width(width)
+            .widthIn(max = width)
+            .fillMaxWidth()
             .height(height)
-            .background(Color(0xFFFFFFFF), RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp),
+            .clip(RoundedCornerShape(7.dp))
+            .background(BrandSurface)
+            .border(1.dp, BrandBorder, RoundedCornerShape(7.dp))
+            .padding(horizontal = 11.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        // Плавающий label сверху, если есть значение
         if (hasValue) {
             Text(
                 text = placeholder,
-                style = TextStyle(
-                    fontSize = 10.sp,
-                    color = Color(0xFF757575),
-                    fontFamily = DefaultFont
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 6.dp)
+                modifier = Modifier.align(Alignment.TopStart).padding(top = 4.dp),
+                fontFamily = DefaultFont,
+                fontSize = 9.sp,
+                color = BrandMuted
             )
         }
-
-        // Основное поле ввода
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = TextStyle(
-                fontSize = 13.sp,
-                color = Color(0xFF1A1A1A),
-                fontFamily = DefaultFont
-            ),
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = if (hasValue) 14.dp else 0.dp),
+            readOnly = readOnly,
+            textStyle = TextStyle(fontFamily = DefaultFont, fontSize = 13.sp, color = BrandInk),
+            cursorBrush = SolidColor(BrandPrimary),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            modifier = Modifier.fillMaxWidth().padding(top = if (hasValue) 10.dp else 0.dp),
             decorationBox = { innerTextField ->
                 Box {
                     if (!hasValue) {
-                        Text(
-                            text = placeholder,
-                            style = TextStyle(
-                                fontSize = 13.sp,
-                                color = Color(0xFF757575),
-                                fontFamily = DefaultFont
-                            )
-                        )
+                        Text(placeholder, fontFamily = DefaultFont, fontSize = 13.sp, color = BrandMuted)
                     }
                     innerTextField()
                 }
             }
         )
     }
+}
+
+@Composable
+fun ScreenTitle(
+    title: String,
+    iconRes: Int? = null,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (iconRes != null) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = BrandInk,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(title, fontFamily = DefaultFont, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = BrandInk)
+    }
+}
+
+@Composable
+fun InlineStatus(message: String, isError: Boolean = false, modifier: Modifier = Modifier) {
+    Text(
+        text = message,
+        modifier = modifier,
+        fontFamily = DefaultFont,
+        fontSize = 12.sp,
+        color = if (isError) BrandError else BrandSuccess
+    )
+}
+
+fun displayPrice(rawPrice: String?): String {
+    val value = rawPrice?.trim().orEmpty()
+    if (value.isBlank()) return "Цена не указана"
+    return if (value.contains("₽") || value.contains("руб", ignoreCase = true)) value else "$value ₽"
 }

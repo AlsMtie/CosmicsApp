@@ -1,21 +1,18 @@
 package com.example.cosmicsapp.screens
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,147 +22,152 @@ import com.example.cosmicsapp.CosmicsTopBar
 import com.example.cosmicsapp.R
 import com.example.cosmicsapp.data.Category
 import com.example.cosmicsapp.supabase
+import com.example.cosmicsapp.ui.theme.BrandBackground
+import com.example.cosmicsapp.ui.theme.BrandBorder
+import com.example.cosmicsapp.ui.theme.BrandInk
+import com.example.cosmicsapp.ui.theme.BrandMuted
+import com.example.cosmicsapp.ui.theme.BrandPrimary
+import com.example.cosmicsapp.ui.theme.BrandSurface
 import com.example.cosmicsapp.ui.theme.DefaultFont
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeout
 
 @Composable
 fun CatalogScreen(navController: NavController) {
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    var retryKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                categories = supabase.postgrest["Category"]
-                    .select()
-                    .decodeList<Category>()
-                isLoading = false
-            } catch (e: Exception) {
-                errorMessage = e.message
-                isLoading = false
-            }
+    LaunchedEffect(retryKey) {
+        isLoading = true
+        errorMessage = null
+        try {
+            categories = withTimeout(12_000) { supabase.postgrest["Category"].select().decodeList<Category>() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            errorMessage = e.message ?: "Не удалось загрузить категории"
+        } finally {
+            isLoading = false
         }
     }
 
     Scaffold(
         topBar = { CosmicsTopBar() },
-        bottomBar = { CosmicsBottomNav(currentRoute = "catalog", onNavigate = { navController.navigate(it) }) },
-        containerColor = Color(0xFFF4F7FA)
+        bottomBar = {
+            CosmicsBottomNav(currentRoute = "catalog") { route ->
+                navController.navigate(route) { launchSingleTop = true }
+            }
+        },
+        containerColor = BrandBackground
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 40.dp)
-                    .padding(horizontal = 60.dp)
-                    .fillMaxWidth()
-                    .height(151.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.aksia),
-                    contentDescription = "Картинка акции",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+            item { Spacer(Modifier.height(35.dp)) }
+
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.aksia),
+                        contentDescription = "Акция COSMICS",
+                        contentScale = ContentScale.None,
+                        modifier = Modifier.wrapContentSize(unbounded = true)
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFFFFF), RoundedCornerShape(10.dp))
-                    .clip(RoundedCornerShape(10.dp))
-            ) {
+            item { Spacer(Modifier.height(55.dp)) }
+
+            item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 24.dp)
+                        .background(BrandSurface, RoundedCornerShape(10.dp))
+                        .padding(start = 16.dp, end = 14.dp, top = 15.dp, bottom = 10.dp)
                 ) {
                     Text(
                         text = "Каталог товаров",
-                        style = TextStyle(
-                            fontFamily = DefaultFont,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A)
-                        )
+                        fontFamily = DefaultFont,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = BrandInk
                     )
-
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(Modifier.height(9.dp))
 
                     when {
-                        isLoading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
+                        isLoading -> Box(
+                            Modifier.fillMaxWidth().height(130.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = BrandPrimary,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        errorMessage != null -> Column(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Text(
+                                "Не удалось загрузить категории",
+                                fontFamily = DefaultFont,
+                                fontSize = 12.sp,
+                                color = BrandMuted
+                            )
+                            TextButton(
+                                onClick = { retryKey++ },
+                                contentPadding = PaddingValues(0.dp)
                             ) {
-                                CircularProgressIndicator(color = Color(0xFF5795B5))
+                                Text("Повторить", fontFamily = DefaultFont, color = BrandPrimary)
                             }
                         }
-                        errorMessage != null -> {
-                            Box(
+
+                        categories.isEmpty() -> Text(
+                            text = "Категории пока не добавлены",
+                            modifier = Modifier.padding(vertical = 17.dp),
+                            fontFamily = DefaultFont,
+                            fontSize = 12.sp,
+                            color = BrandMuted
+                        )
+
+                        else -> categories.forEachIndexed { index, category ->
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Ошибка: $errorMessage",
-                                    style = TextStyle(fontSize = 13.sp, fontFamily = DefaultFont, color = Color(0xFF757575))
-                                )
-                            }
-                        }
-                        categories.isEmpty() -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Категории не найдены",
-                                    style = TextStyle(fontSize = 13.sp, fontFamily = DefaultFont, color = Color(0xFF757575))
-                                )
-                            }
-                        }
-                        else -> {
-                            LazyColumn {
-                                items(categories, key = { it.categoryId }) { category ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                navController.navigate("category/${category.categoryId}/${category.name}")
-                                            }
-                                            .padding(vertical = 12.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            category.name,
-                                            style = TextStyle(
-                                                fontSize = 13.sp,
-                                                color = Color(0xFF1A1A1A),
-                                                fontFamily = DefaultFont
-                                            )
-                                        )
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.arrow_next),
-                                            contentDescription = null,
-                                            tint = Color(0xFF757575),
-                                            modifier = Modifier.size(10.dp)
+                                    .heightIn(min = 37.dp)
+                                    .clickable {
+                                        navController.navigate(
+                                            "category/${category.categoryId}/${Uri.encode(category.name)}"
                                         )
                                     }
-                                }
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    category.name,
+                                    fontFamily = DefaultFont,
+                                    fontSize = 13.sp,
+                                    color = BrandInk
+                                )
+                                Icon(
+                                    painter = painterResource(R.drawable.arrow_next),
+                                    contentDescription = "Открыть ${category.name}",
+                                    tint = BrandInk,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                            if (index < categories.lastIndex) {
+                                HorizontalDivider(color = BrandBorder, thickness = 0.6.dp)
                             }
                         }
                     }

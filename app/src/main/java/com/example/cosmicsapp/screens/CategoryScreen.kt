@@ -1,8 +1,6 @@
-
 package com.example.cosmicsapp.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -14,25 +12,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.cosmicsapp.CartStore
 import com.example.cosmicsapp.CosmicsBottomNav
 import com.example.cosmicsapp.CosmicsTopBar
-import com.example.cosmicsapp.R
-import com.example.cosmicsapp.data.Product
-import com.example.cosmicsapp.supabase
-import com.example.cosmicsapp.ui.theme.DefaultFont
+import com.example.cosmicsapp.CustomButton
 import com.example.cosmicsapp.buildImageUrl
+import com.example.cosmicsapp.data.Brand
+import com.example.cosmicsapp.data.Category
+import com.example.cosmicsapp.data.Product
+import com.example.cosmicsapp.displayPrice
+import com.example.cosmicsapp.supabase
+import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeout
 
 @Composable
 fun CategoryScreen(
@@ -40,106 +40,91 @@ fun CategoryScreen(
     categoryId: Long,
     categoryName: String
 ) {
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    var products by remember(categoryId) { mutableStateOf<List<Product>>(emptyList()) }
+    var isLoading by remember(categoryId) { mutableStateOf(true) }
+    var errorMessage by remember(categoryId) { mutableStateOf<String?>(null) }
+    var retryKey by remember(categoryId) { mutableIntStateOf(0) }
 
-    LaunchedEffect(categoryId) {
-        scope.launch {
-            try {
-                products = supabase.postgrest["Product"]
-                    .select {
-                        filter { eq("category_id", categoryId) }
-                    }
-                    .decodeList<Product>()
-                isLoading = false
-            } catch (e: Exception) {
-                errorMessage = e.message
-                isLoading = false
+    LaunchedEffect(categoryId, retryKey) {
+        isLoading = true
+        errorMessage = null
+        try {
+            products = withTimeout(12_000) {
+                val baseProducts = supabase.postgrest["Product"].select {
+                    filter { eq("category_id", categoryId) }
+                }.decodeList<Product>()
+                val brands = supabase.postgrest["Brand"].select().decodeList<Brand>()
+                baseProducts.map { product ->
+                    product.copy(
+                        brandName = brands.firstOrNull { it.brandId == product.brandId }?.name,
+                        categoryName = categoryName
+                    )
+                }
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            errorMessage = e.message ?: "Не удалось загрузить товары"
+        } finally {
+            isLoading = false
         }
     }
 
     Scaffold(
-        topBar = {
-            CosmicsTopBar(
-                showBack = true,
-                onBack = { navController.popBackStack() }
-            )
-        },
+        topBar = { CosmicsTopBar(showBack = true, onBack = { navController.popBackStack() }) },
         bottomBar = {
-            CosmicsBottomNav(
-                currentRoute = "catalog",
-                onNavigate = { navController.navigate(it) }
-            )
+            CosmicsBottomNav(currentRoute = "category") { route ->
+                navController.navigate(route) { launchSingleTop = true }
+            }
         },
-        containerColor = Color(0xFFF4F7FA)
+        containerColor = BrandBackground
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
-        ) {
-            // Заголовок категории
+        Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Text(
-                text = categoryName,
-                style = TextStyle(
-                    fontSize = 22.sp,
-                    fontFamily = DefaultFont,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF031927)
-                ),
-                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+                categoryName,
+                modifier = Modifier.padding(top = 17.dp, bottom = 13.dp),
+                fontFamily = DefaultFont,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Medium,
+                color = BrandInk
             )
-
             when {
-                isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF5795B5))
+                isLoading -> Box(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator(color = BrandPrimary, strokeWidth = 2.dp) }
+
+                errorMessage != null -> Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("Не удалось загрузить товары", fontFamily = DefaultFont, color = BrandMuted)
+                    TextButton(onClick = { retryKey++ }) {
+                        Text("Повторить", fontFamily = DefaultFont, color = BrandPrimary)
                     }
                 }
-                errorMessage != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Ошибка: $errorMessage",
-                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF757575))
+
+                products.isEmpty() -> Box(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("В этой категории пока нет товаров", fontFamily = DefaultFont, fontSize = 12.sp, color = BrandMuted)
+                }
+
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    items(products, key = { it.productId }) { product ->
+                        ProductCard(
+                            product = product,
+                            onOpen = { navController.navigate("product/${product.productId}") },
+                            onAddToCart = { CartStore.add(product) }
                         )
-                    }
-                }
-                products.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "В этой категории пока нет товаров",
-                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF757575))
-                        )
-                    }
-                }
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 24.dp)
-                    ) {
-                        items(products, key = { it.productId }) { product ->
-                            ProductCard(
-                                product = product,
-                                onClick = {
-                                    navController.navigate("product/${product.productId}")
-                                }
-                            )
-                        }
                     }
                 }
             }
@@ -150,67 +135,47 @@ fun CategoryScreen(
 @Composable
 fun ProductCard(
     product: Product,
-    onClick: () -> Unit
+    onOpen: () -> Unit,
+    onAddToCart: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .background(Color(0xFFFFFFFF), RoundedCornerShape(12.dp))
-            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(10.dp)
-    ) {
-        // Картинка из Storage
-        Box(
+    Column(Modifier.fillMaxWidth()) {
+        AsyncImage(
+            model = buildImageUrl(product.image),
+            contentDescription = product.name,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .background(Color(0xFFF4F7FA), RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            val imageUrl = buildImageUrl(product.image)
-            if (!imageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = product.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp))
-                )
-            } else {
-                Icon(
-                    painter = painterResource(R.drawable.main_logo),
-                    contentDescription = null,
-                    tint = Color(0xFF757575),
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = product.name,
-            style = TextStyle(
-                fontSize = 13.sp,
-                fontFamily = DefaultFont,
-                color = Color(0xFF1A1A1A),
-                fontWeight = FontWeight.Medium
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+                .height(128.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(BrandBackground)
+                .clickable(onClick = onOpen)
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = product.price ?: "",
-            style = TextStyle(
-                fontSize = 14.sp,
+        Column(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(top = 7.dp)
+        ) {
+            product.brandName?.takeIf { it.isNotBlank() }?.let {
+                Text(it, fontFamily = DefaultFont, fontSize = 10.sp, color = BrandMuted, maxLines = 1)
+            }
+            Text(
+                product.name,
                 fontFamily = DefaultFont,
-                color = Color(0xFF031927),
-                fontWeight = FontWeight.Bold
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = BrandInk,
+                minLines = 2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.height(3.dp))
+            Text(displayPrice(product.price), fontFamily = DefaultFont, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = BrandInk)
+        }
+        Spacer(Modifier.height(7.dp))
+        CustomButton(
+            text = "В корзину",
+            onClick = onAddToCart,
+            width = 160.dp,
+            height = 29.dp
         )
     }
 }

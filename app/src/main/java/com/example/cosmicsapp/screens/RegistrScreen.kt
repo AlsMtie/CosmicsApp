@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +20,12 @@ import com.example.cosmicsapp.CustomButton
 import com.example.cosmicsapp.CustomTextField
 import com.example.cosmicsapp.R
 import com.example.cosmicsapp.supabase
-import com.example.cosmicsapp.ui.theme.DefaultFont
+import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
-import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -35,15 +35,30 @@ fun RegisterScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    var message by remember { mutableStateOf<String?>(null) }
+    var isSuccess by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope()
     val fieldWidth = 306.dp
 
     Scaffold(
-        topBar = { CosmicsTopBar(showBack = true, onBack = { navController.popBackStack() }) },
-        bottomBar = { CosmicsBottomNav(currentRoute = "register", onNavigate = { navController.navigate(it) }) },
-        containerColor = Color(0xFFF4F7FA)
+        topBar = {
+            CosmicsTopBar(
+                showBack = true,
+                onBack = { navController.popBackStack() }
+            )
+        },
+        bottomBar = {
+            CosmicsBottomNav(
+                currentRoute = "register",
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        },
+        containerColor = BrandBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -63,105 +78,198 @@ fun RegisterScreen(navController: NavController) {
                 Icon(
                     painter = painterResource(R.drawable.user),
                     contentDescription = null,
+                    tint = BrandInk,
                     modifier = Modifier.size(32.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+
+                Spacer(Modifier.width(8.dp))
+
                 Text(
                     text = "РЕГИСТРАЦИЯ",
                     style = TextStyle(
                         fontSize = 20.sp,
                         fontFamily = DefaultFont,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF031927)
+                        color = BrandInk
                     )
                 )
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(Modifier.height(40.dp))
 
-            CustomTextField(value = name, onValueChange = { name = it }, placeholder = "Имя", width = fieldWidth)
-            Spacer(modifier = Modifier.height(12.dp))
-            CustomTextField(value = lastName, onValueChange = { lastName = it }, placeholder = "Фамилия", width = fieldWidth)
-            Spacer(modifier = Modifier.height(12.dp))
-            CustomTextField(value = email, onValueChange = { email = it }, placeholder = "Email", width = fieldWidth)
-            Spacer(modifier = Modifier.height(12.dp))
-            CustomTextField(value = password, onValueChange = { password = it }, placeholder = "Пароль", isPassword = true, width = fieldWidth)
-            Spacer(modifier = Modifier.height(12.dp))
-            CustomTextField(value = confirmPassword, onValueChange = { confirmPassword = it }, placeholder = "Повтор пароля", isPassword = true, width = fieldWidth)
+            CustomTextField(
+                value = name,
+                onValueChange = {
+                    name = it
+                    message = null
+                },
+                placeholder = "Имя",
+                width = fieldWidth
+            )
 
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
+
+            CustomTextField(
+                value = lastName,
+                onValueChange = {
+                    lastName = it
+                    message = null
+                },
+                placeholder = "Фамилия",
+                width = fieldWidth
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            CustomTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    message = null
+                },
+                placeholder = "Email",
+                width = fieldWidth
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            CustomTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    message = null
+                },
+                placeholder = "Пароль",
+                isPassword = true,
+                width = fieldWidth
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            CustomTextField(
+                value = confirmPassword,
+                onValueChange = {
+                    confirmPassword = it
+                    message = null
+                },
+                placeholder = "Повтор пароля",
+                isPassword = true,
+                width = fieldWidth
+            )
+
+            message?.let {
+                Spacer(Modifier.height(12.dp))
+
                 Text(
-                    text = errorMessage!!,
-                    style = TextStyle(fontSize = 12.sp, color = Color(0xFFD32F2F), fontFamily = DefaultFont)
+                    text = it,
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = if (isSuccess) {
+                            BrandSuccess
+                        } else {
+                            BrandError
+                        },
+                        fontFamily = DefaultFont
+                    )
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text = "Уже есть аккаунт? Войти",
                 style = TextStyle(
                     fontSize = 13.sp,
-                    color = Color(0xFF6D6D6D),
+                    color = BrandMuted,
                     fontWeight = FontWeight.Medium,
                     fontFamily = DefaultFont
                 ),
-                modifier = Modifier.clickable { navController.popBackStack() }
+                modifier = Modifier.clickable {
+                    navController.popBackStack()
+                }
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(Modifier.height(40.dp))
 
             CustomButton(
-                text = if (isLoading) "Загрузка..." else "Зарегистрироваться",
+                text = if (isLoading) {
+                    "Загрузка..."
+                } else {
+                    "Зарегистрироваться"
+                },
+                enabled = !isLoading,
+                modifier = Modifier.padding(bottom = 24.dp),
                 onClick = {
+                    val cleanEmail = email.trim()
+
                     when {
-                        name.isBlank() || lastName.isBlank() || email.isBlank() || password.isBlank() -> {
-                            errorMessage = "Заполните все поля"
+                        name.isBlank() ||
+                                lastName.isBlank() ||
+                                cleanEmail.isBlank() ||
+                                password.isBlank() -> {
+                            message = "Заполните все поля"
+                            isSuccess = false
                             return@CustomButton
                         }
-                        password != confirmPassword -> {
-                            errorMessage = "Пароли не совпадают"
+
+                        !android.util.Patterns.EMAIL_ADDRESS
+                            .matcher(cleanEmail)
+                            .matches() -> {
+                            message = "Введите корректный email"
+                            isSuccess = false
                             return@CustomButton
                         }
+
                         password.length < 6 -> {
-                            errorMessage = "Пароль должен быть не менее 6 символов"
+                            message = "Пароль должен быть не менее 6 символов"
+                            isSuccess = false
+                            return@CustomButton
+                        }
+
+                        password != confirmPassword -> {
+                            message = "Пароли не совпадают"
+                            isSuccess = false
                             return@CustomButton
                         }
                     }
 
                     scope.launch {
                         isLoading = true
-                        errorMessage = null
+                        message = null
+                        isSuccess = false
+
                         try {
                             supabase.auth.signUpWith(Email) {
-                                this.email = email.trim()
+                                this.email = cleanEmail
                                 this.password = password
+
+                                this.data = buildJsonObject {
+                                    put("first_name", name.trim())
+                                    put("last_name", lastName.trim())
+                                }
                             }
 
-                            val authUserId = supabase.auth.currentUserOrNull()?.id ?: ""
-                            supabase.postgrest["Users"].insert(
-                                mapOf(
-                                    "user_id" to authUserId,
-                                    "email" to email.trim(),
-                                    "first_name" to name,
-                                    "last_name" to lastName,
-                                    "phone" to ""
-                                )
-                            )
-
-                            navController.navigate("profile") {
-                                popUpTo("catalog") { inclusive = false }
+                            if (supabase.auth.currentUserOrNull() != null) {
+                                navController.navigate("profile") {
+                                    popUpTo("catalog") {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                message =
+                                    "Аккаунт создан. Теперь войдите в приложение."
+                                isSuccess = true
                             }
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "Ошибка регистрации"
+                            message = e.message
+                                ?: "Не удалось создать аккаунт"
+                            isSuccess = false
                         } finally {
                             isLoading = false
                         }
                     }
-                },
-                enabled = !isLoading,
-                modifier = Modifier.padding(bottom = 24.dp)
+                }
             )
         }
     }
