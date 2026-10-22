@@ -22,6 +22,7 @@ import com.example.cosmicsapp.ScreenTitle
 import com.example.cosmicsapp.buildImageUrl
 import com.example.cosmicsapp.data.StoreOrder
 import com.example.cosmicsapp.data.StoreOrderItem
+import com.example.cosmicsapp.data.Product
 import com.example.cosmicsapp.supabase
 import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
@@ -55,9 +56,16 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                     }
                 }.decodeSingleOrNull<StoreOrder>()
                 if (order == null) throw IllegalStateException("Заказ не найден")
-                orderLines = supabase.postgrest["Order_items"].select {
+                val fetchedLines = supabase.postgrest["Order_items"].select {
                     filter { eq("order_id", orderId) }
                 }.decodeList<StoreOrderItem>()
+                val productImages = if (fetchedLines.isEmpty()) emptyMap() else {
+                    supabase.postgrest["Product"].select().decodeList<Product>()
+                        .associate { it.productId to it.image }
+                }
+                orderLines = fetchedLines.map { line ->
+                    line.copy(productImage = line.productImage ?: productImages[line.productId])
+                }
             }
         } catch (e: CancellationException) {
             throw e
@@ -105,6 +113,7 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                         )
                         Text(
                             currentOrder.status,
+                            modifier = Modifier.padding(start = 22.dp),
                             fontFamily = DefaultFont,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -149,9 +158,8 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                                     ) {
                                         Text(item.quantity, fontFamily = DefaultFont, fontSize = 12.sp, color = BrandInk)
                                     }
-                                    Text("Количество", fontFamily = DefaultFont, fontSize = 10.sp, color = BrandMuted)
                                 }
-                                Text("${lineTotal(item.price, item.quantity)} ₽", fontFamily = DefaultFont, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = BrandInk)
+                                Text("${lineTotal(item.price, item.quantity)} ₽", fontFamily = DefaultFont, fontSize = 20.sp, fontWeight = FontWeight.Medium, color = BrandInk)
                             }
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 12.dp),
@@ -169,8 +177,8 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                                 Text("$totalCount ${russianItems(totalCount)}", fontFamily = DefaultFont, fontSize = 11.sp, color = BrandMuted)
                             }
                             Box(
-                                modifier = Modifier.widthIn(max = 310.dp).fillMaxWidth().height(48.dp).background(BrandSurface, RoundedCornerShape(10.dp))
-                                    .padding(0.dp),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(48.dp)
+                                    .background(BrandSurface, RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Surface(
@@ -185,7 +193,7 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                                 }
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Итого", fontFamily = DefaultFont, fontSize = 13.sp, color = BrandInk)
+                                Text("Итого", fontFamily = DefaultFont, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = BrandInk)
                                 Text("${displayTotal(currentOrder.totalPrice)} ₽", fontFamily = DefaultFont, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = BrandInk)
                             }
                         }

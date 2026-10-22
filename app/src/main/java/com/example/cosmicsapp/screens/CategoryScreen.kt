@@ -147,7 +147,7 @@ fun ProductCard(
                 .fillMaxWidth()
                 .height(128.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(BrandBackground)
+                .background(BrandSurface)
                 .clickable(onClick = onOpen)
         )
         Column(

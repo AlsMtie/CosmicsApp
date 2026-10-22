@@ -29,6 +29,7 @@ data class Product(
     val size: String? = null,
     val color: String? = null,
     val quantity: String? = null,
+    @SerialName("variant_group") val variantGroup: Long? = null,
     @Transient val brandName: String? = null,
     @Transient val categoryName: String? = null
 )
@@ -84,4 +85,52 @@ data class StoreOrderItem(
 data class PlacedOrder(
     @SerialName("orders_id") val id: Long,
     @SerialName("number_order") val numberOrder: String
+)
+
+
+@Serializable
+data class OrderInsert(
+    val status: String,
+
+    @SerialName("total_price")
+    val totalPrice: String,
+
+    @SerialName("pickpoint_id")
+    val pickupPointId: Long,
+
+    @SerialName("user_id")
+    val userId: String,
+
+    @SerialName("number_order")
+    val numberOrder: String,
+
+    @SerialName("recipient_name")
+    val recipientName: String,
+
+    @SerialName("recipient_phone")
+    val recipientPhone: String,
+
+    @SerialName("recipient_email")
+    val recipientEmail: String
+)
+
+@Serializable
+data class OrderItemInsert(
+    @SerialName("order_id")
+    val orderId: Long,
+
+    @SerialName("product_id")
+    val productId: Long,
+
+    val quantity: String,
+    val name: String,
+    val brand: String,
+    val category: String,
+    val price: String? = null,
+
+    @SerialName("product_image")
+    val productImage: String? = null,
+
+    val size: String? = null,
+    val color: String? = null
 )

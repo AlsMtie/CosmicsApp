@@ -23,6 +23,7 @@ import com.example.cosmicsapp.ScreenTitle
 import com.example.cosmicsapp.buildImageUrl
 import com.example.cosmicsapp.data.StoreOrder
 import com.example.cosmicsapp.data.StoreOrderItem
+import com.example.cosmicsapp.data.Product
 import com.example.cosmicsapp.supabase
 import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
@@ -58,8 +59,11 @@ fun OrderHistoryScreen(navController: NavController) {
                     filter { eq("user_id", userId) }
                 }.decodeList<StoreOrder>()
                 val orderItems = if (orders.isEmpty()) emptyList() else {
-                    // RLS restricts this result to items belonging to the current user's orders.
                     supabase.postgrest["Order_items"].select().decodeList<StoreOrderItem>()
+                }
+                val productImages = if (orderItems.isEmpty()) emptyMap() else {
+                    supabase.postgrest["Product"].select().decodeList<Product>()
+                        .associate { it.productId to it.image }
                 }
                 val byOrder = orderItems.groupBy { it.orderId }
                 rows = orders.sortedByDescending { it.date }.map { order ->
@@ -67,7 +71,7 @@ fun OrderHistoryScreen(navController: NavController) {
                     OrderHistoryRow(
                         order = order,
                         itemCount = items.sumOf { it.quantity.toIntOrNull() ?: 0 },
-                        previewImage = items.firstOrNull()?.productImage
+                        previewImage = items.firstNotNullOfOrNull { it.productImage ?: productImages[it.productId] }
                     )
                 }
             }
@@ -134,7 +138,7 @@ fun OrderHistoryScreen(navController: NavController) {
                                     model = buildImageUrl(row.previewImage),
                                     contentDescription = "Товар из заказа",
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.width(74.dp).height(100.dp).background(BrandBackground)
+                                    modifier = Modifier.width(74.dp).height(100.dp).background(BrandSurface)
                                 )
                                 Column(Modifier.weight(1f).fillMaxHeight()) {
                                     Text(row.order.status, fontFamily = DefaultFont, fontSize = 12.sp, color = BrandInk)
@@ -147,11 +151,6 @@ fun OrderHistoryScreen(navController: NavController) {
                                     Text(formatOrderDate(row.order.date), fontFamily = DefaultFont, fontSize = 10.sp, color = BrandMuted)
                                 }
                             }
-                            HorizontalDivider(
-                                modifier = Modifier.padding(top = 12.dp),
-                                color = BrandBorder,
-                                thickness = 1.dp
-                            )
                         }
                     }
                 }

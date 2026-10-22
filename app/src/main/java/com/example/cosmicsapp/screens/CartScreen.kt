@@ -38,7 +38,7 @@ fun CartScreen(navController: NavController) {
                 if (lines.isNotEmpty()) {
                     Button(
                         onClick = { navController.navigate("checkout") { launchSingleTop = true } },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp).height(52.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp, vertical = 20.dp).height(58.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = BrandInk),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
@@ -49,14 +49,15 @@ fun CartScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Оформить заказ", fontFamily = DefaultFont, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Оформить заказ", fontFamily = DefaultFont, fontSize = 20.sp, fontWeight = FontWeight.Medium)
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(total, fontFamily = DefaultFont, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                Text(total, fontFamily = DefaultFont, fontSize = 24.sp, fontWeight = FontWeight.Medium)
                                 Text(
                                     "$itemCount ${cartItemNoun(itemCount)}",
                                     fontFamily = DefaultFont,
                                     fontSize = 10.sp,
-                                    color = BrandMuted
+                                    color = BrandMuted,
+                                    modifier = Modifier.padding(end=17.dp)
                                 )
                             }
                         }
@@ -116,7 +117,7 @@ fun CartScreen(navController: NavController) {
                                 model = buildImageUrl(line.product.image),
                                 contentDescription = line.product.name,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.width(86.dp).height(115.dp).background(BrandBackground)
+                                modifier = Modifier.width(86.dp).height(115.dp).background(BrandSurface)
                             )
                             Column(modifier = Modifier.fillMaxHeight().weight(1f)) {
                                 Text(
@@ -155,7 +156,8 @@ fun CartScreen(navController: NavController) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         QuantityButton("−") { CartStore.removeOne(line.product.productId) }
                                         Text(line.quantity.toString(), fontFamily = DefaultFont, fontSize = 12.sp, color = BrandInk)
-                                        QuantityButton("+") { CartStore.add(line.product) }
+                                        val stock = line.product.quantity?.trim()?.toIntOrNull() ?: 0
+                                        QuantityButton("+", enabled = line.quantity < stock) { CartStore.add(line.product) }
                                     }
                                 }
                             }
@@ -168,15 +170,16 @@ fun CartScreen(navController: NavController) {
 }
 
 @Composable
-private fun QuantityButton(text: String, onClick: () -> Unit) {
+private fun QuantityButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        color = BrandBlue,
+        enabled = enabled,
+        color = if (enabled) BrandBlue else BrandBorder,
         shape = RoundedCornerShape(4.dp),
         modifier = Modifier.size(27.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(text, fontFamily = DefaultFont, fontSize = 17.sp, color = BrandInk)
+            Text(text, fontFamily = DefaultFont, fontSize = 17.sp, color = if (enabled) BrandInk else BrandMuted)
         }
     }
 }

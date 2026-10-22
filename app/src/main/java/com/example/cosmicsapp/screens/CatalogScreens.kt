@@ -78,7 +78,7 @@ fun CatalogScreen(navController: NavController) {
                         painter = painterResource(R.drawable.aksia),
                         contentDescription = "Акция COSMICS",
                         contentScale = ContentScale.None,
-                        modifier = Modifier.wrapContentSize(unbounded = true)
+                        modifier = Modifier.width(600.dp)
                     )
                 }
             }
@@ -90,12 +90,12 @@ fun CatalogScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(BrandSurface, RoundedCornerShape(10.dp))
-                        .padding(start = 16.dp, end = 14.dp, top = 15.dp, bottom = 10.dp)
+                        .padding(start = 24.dp, end = 24.dp, top = 15.dp, bottom = 10.dp)
                 ) {
                     Text(
                         text = "Каталог товаров",
                         fontFamily = DefaultFont,
-                        fontSize = 17.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Medium,
                         color = BrandInk
                     )
@@ -157,12 +157,12 @@ fun CatalogScreen(navController: NavController) {
                                     category.name,
                                     fontFamily = DefaultFont,
                                     fontSize = 13.sp,
-                                    color = BrandInk
+                                    color = BrandInk,
+                                    fontWeight = FontWeight.Normal
                                 )
                                 Icon(
                                     painter = painterResource(R.drawable.arrow_next),
                                     contentDescription = "Открыть ${category.name}",
-                                    tint = BrandInk,
                                     modifier = Modifier.size(12.dp)
                                 )
                             }

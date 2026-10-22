@@ -46,13 +46,13 @@ fun CosmicsTopBar(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Назад",
                     tint = BrandInk,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
         }
         Image(
-            painter = painterResource(R.drawable.logo),
+            painter = painterResource(R.drawable.icon_2),
             contentDescription = "COSMICS",
             modifier = Modifier.size(width = 141.dp, height = 55.dp)
         )
@@ -216,17 +216,27 @@ fun ScreenTitle(
     iconRes: Int? = null,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier.padding(start = 25.dp, top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         if (iconRes != null) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
                 tint = BrandInk,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(30.dp)
             )
             Spacer(Modifier.width(8.dp))
         }
-        Text(title, fontFamily = DefaultFont, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = BrandInk)
+        Text(
+            title,
+            modifier = Modifier.padding(start = 0.dp),
+            fontFamily = DefaultFont,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = BrandInk
+        )
     }
 }
 

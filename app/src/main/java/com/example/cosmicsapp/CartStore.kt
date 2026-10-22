@@ -10,10 +10,15 @@ object CartStore {
     val lines = mutableStateListOf<CartLine>()
 
     fun add(product: Product) {
+        val stock = product.quantity?.trim()?.toIntOrNull() ?: 0
+        if (stock <= 0) return
+
         val index = lines.indexOfFirst { it.product.productId == product.productId }
         if (index >= 0) {
             val old = lines[index]
-            lines[index] = old.copy(quantity = old.quantity + 1)
+            if (old.quantity < stock) {
+                lines[index] = old.copy(quantity = old.quantity + 1, product = product)
+            }
         } else {
             lines.add(CartLine(product))
         }
