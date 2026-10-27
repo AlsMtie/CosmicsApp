@@ -50,12 +50,19 @@ fun CosmicsTopBar(
                 )
             }
             Spacer(Modifier.width(8.dp))
+
+            Image(
+                painter = painterResource(R.drawable.icon_2),
+                contentDescription = "COSMICS",
+                modifier = Modifier.size(width = 141.dp, height = 55.dp)
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.logo),
+                contentDescription = "COSMICS",
+                modifier = Modifier.size(width = 141.dp, height = 55.dp)
+            )
         }
-        Image(
-            painter = painterResource(R.drawable.icon_2),
-            contentDescription = "COSMICS",
-            modifier = Modifier.size(width = 141.dp, height = 55.dp)
-        )
     }
 }
 

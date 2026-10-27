@@ -1,32 +1,60 @@
 package com.example.cosmicsapp.ui.theme
 
+import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-
-private val CosmicsColorScheme = lightColorScheme(
-    primary = BrandPrimary,
-    onPrimary = BrandSurface,
-    secondary = BrandBlue,
-    onSecondary = BrandInk,
-    background = BrandBackground,
-    onBackground = BrandInk,
-    surface = BrandSurface,
-    onSurface = BrandInk,
-    outline = BrandBorder,
-    error = BrandError,
-    onError = BrandSurface
-)
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 @Composable
 fun CosmicsAppTheme(
-    darkTheme: Boolean = false,
-    dynamicColor: Boolean = false,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    if (darkTheme) {
+        applyDarkColors()
+    } else {
+        applyLightColors()
+    }
+
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
+            primary = BrandPrimary,
+            background = BrandBackground,
+            surface = BrandSurface,
+            onPrimary = BrandInk,
+            onBackground = BrandInk,
+            onSurface = BrandInk,
+            outline = BrandBorder
+        )
+    } else {
+        lightColorScheme(
+            primary = BrandPrimary,
+            background = BrandBackground,
+            surface = BrandSurface,
+            onPrimary = BrandInk,
+            onBackground = BrandInk,
+            onSurface = BrandInk,
+            outline = BrandBorder
+        )
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+    }
+
     MaterialTheme(
-        colorScheme = CosmicsColorScheme,
-        typography = Typography,
+        colorScheme = colorScheme,
         content = content
     )
 }
