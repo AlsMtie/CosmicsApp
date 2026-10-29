@@ -1,8 +1,7 @@
-package com.example.cosmicsapp
+package com.example.cosmicsapp.data
 
 
 import androidx.compose.runtime.mutableStateListOf
-import com.example.cosmicsapp.data.Product
 
 data class CartLine(val product: Product, val quantity: Int = 1)
 

@@ -1,4 +1,4 @@
-package com.example.cosmicsapp.screens
+package com.example.cosmicsapp.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -6,100 +6,68 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.cosmicsapp.CosmicsBottomNav
-import com.example.cosmicsapp.CosmicsTopBar
 import com.example.cosmicsapp.R
-import com.example.cosmicsapp.ScreenTitle
-import com.example.cosmicsapp.buildImageUrl
-import com.example.cosmicsapp.data.StoreOrder
-import com.example.cosmicsapp.data.StoreOrderItem
-import com.example.cosmicsapp.data.Product
-import com.example.cosmicsapp.supabase
+import com.example.cosmicsapp.ui.components.*
+import com.example.cosmicsapp.ui.screens.viewmodels.OrderDetailViewModel
 import com.example.cosmicsapp.ui.theme.*
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withTimeout
+import com.example.cosmicsapp.utils.buildImageUrl
+import com.example.cosmicsapp.utils.displayTotal
+import com.example.cosmicsapp.utils.russianItems
 
 @Composable
-fun OrderDetailScreen(navController: NavController, orderId: Long) {
-    var order by remember(orderId) { mutableStateOf<StoreOrder?>(null) }
-    var orderLines by remember(orderId) { mutableStateOf<List<StoreOrderItem>>(emptyList()) }
-    var loading by remember(orderId) { mutableStateOf(true) }
-    var error by remember(orderId) { mutableStateOf<String?>(null) }
-    var retryKey by remember(orderId) { mutableIntStateOf(0) }
-
-    LaunchedEffect(orderId, retryKey) {
-        loading = true
-        error = null
-        val userId = supabase.auth.currentUserOrNull()?.id
-        if (userId == null) {
-            error = "Войдите в аккаунт, чтобы открыть заказ."
-            loading = false
-            return@LaunchedEffect
-        }
-        try {
-            withTimeout(15_000) {
-                order = supabase.postgrest["Orders"].select {
-                    filter {
-                        eq("orders_id", orderId)
-                        eq("user_id", userId)
-                    }
-                }.decodeSingleOrNull<StoreOrder>()
-                if (order == null) throw IllegalStateException("Заказ не найден")
-                val fetchedLines = supabase.postgrest["Order_items"].select {
-                    filter { eq("order_id", orderId) }
-                }.decodeList<StoreOrderItem>()
-                val productImages = if (fetchedLines.isEmpty()) emptyMap() else {
-                    supabase.postgrest["Product"].select().decodeList<Product>()
-                        .associate { it.productId to it.image }
-                }
-                orderLines = fetchedLines.map { line ->
-                    line.copy(productImage = line.productImage ?: productImages[line.productId])
-                }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            error = e.message ?: "Не удалось загрузить заказ"
-        } finally {
-            loading = false
-        }
+fun OrderDetailScreen(
+    navController: NavController,
+    orderId: Long,
+    viewModel: OrderDetailViewModel = viewModel()
+) {
+    LaunchedEffect(orderId) {
+        viewModel.loadOrder(orderId)
     }
 
     Scaffold(
-        topBar = { CosmicsTopBar(showBack = true, onBack = { navController.popBackStack() }) },
+        topBar = {
+            CosmicsTopBar(showBack = true, onBack = { navController.popBackStack() })
+        },
         bottomBar = {
-            CosmicsBottomNav(currentRoute = "order_detail") { route ->
+            CosmicsBottomNav("order_detail") { route ->
                 navController.navigate(route) { launchSingleTop = true }
             }
         },
         containerColor = BrandBackground
     ) { padding ->
         when {
-            loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = BrandPrimary, strokeWidth = 2.dp)
+            viewModel.loading -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = BrandPrimary, strokeWidth = 2.dp)
+                }
             }
-            error != null || order == null -> Column(
-                Modifier.fillMaxSize().padding(padding).padding(22.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(error ?: "Заказ не найден", fontFamily = DefaultFont, fontSize = 12.sp, color = BrandMuted)
-                TextButton(onClick = { retryKey++ }) { Text("Повторить", fontFamily = DefaultFont, color = BrandPrimary) }
+            viewModel.error != null -> {
+                Column(
+                    Modifier.fillMaxSize().padding(padding).padding(22.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(viewModel.error ?: "Заказ не найден", fontFamily = DefaultFont, fontSize = 12.sp, color = BrandMuted)
+                    TextButton(onClick = { viewModel.loadOrder(orderId) }) {
+                        Text("Повторить", fontFamily = DefaultFont, color = BrandPrimary)
+                    }
+                }
             }
-            else -> {
-                val currentOrder = order!!
-                val totalCount = orderLines.sumOf { it.quantity.toIntOrNull() ?: 0 }
+            viewModel.order != null -> {
+                val currentOrder = viewModel.order!!
+                val totalCount = viewModel.orderLines.sumOf { it.quantity.toIntOrNull() ?: 0 }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                     contentPadding = PaddingValues(top = 15.dp, bottom = 18.dp),
@@ -121,7 +89,7 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
                         )
                         Spacer(Modifier.height(12.dp))
                     }
-                    items(orderLines, key = { it.id ?: it.productId }) { item ->
+                    items(viewModel.orderLines, key = { it.id ?: it.productId }) { item ->
                         Column(Modifier.fillMaxWidth()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp).heightIn(min = 100.dp),
@@ -205,7 +173,10 @@ fun OrderDetailScreen(navController: NavController, orderId: Long) {
 }
 
 private fun lineTotal(price: String?, quantity: String): String {
-    val unitPrice = price.orEmpty().replace(",", ".").filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+    val unitPrice = price.orEmpty()
+        .replace(",", ".")
+        .filter { it.isDigit() || it == '.' }
+        .toDoubleOrNull() ?: 0.0
     val count = quantity.toIntOrNull() ?: 0
     return String.format(java.util.Locale("ru", "RU"), "%.0f", unitPrice * count)
 }

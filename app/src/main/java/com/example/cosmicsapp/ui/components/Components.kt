@@ -1,4 +1,4 @@
-package com.example.cosmicsapp
+package com.example.cosmicsapp.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +23,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.cosmicsapp.R
+import com.example.cosmicsapp.data.supabase
 import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
 

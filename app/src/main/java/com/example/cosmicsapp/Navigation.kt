@@ -6,16 +6,16 @@ import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.cosmicsapp.screens.AuthScreen
-import com.example.cosmicsapp.screens.CartScreen
-import com.example.cosmicsapp.screens.CatalogScreen
-import com.example.cosmicsapp.screens.CategoryScreen
-import com.example.cosmicsapp.screens.CheckoutScreen
-import com.example.cosmicsapp.screens.OrderDetailScreen
-import com.example.cosmicsapp.screens.OrderHistoryScreen
-import com.example.cosmicsapp.screens.ProductDetailScreen
-import com.example.cosmicsapp.screens.ProfileScreen
-import com.example.cosmicsapp.screens.RegisterScreen
+import com.example.cosmicsapp.ui.screens.AuthScreen
+import com.example.cosmicsapp.ui.screens.CartScreen
+import com.example.cosmicsapp.ui.screens.CatalogScreen
+import com.example.cosmicsapp.ui.screens.CategoryScreen
+import com.example.cosmicsapp.ui.screens.CheckoutScreen
+import com.example.cosmicsapp.ui.screens.OrderDetailScreen
+import com.example.cosmicsapp.ui.screens.OrderHistoryScreen
+import com.example.cosmicsapp.ui.screens.ProductDetailScreen
+import com.example.cosmicsapp.ui.screens.ProfileScreen
+import com.example.cosmicsapp.ui.screens.RegisterScreen
 
 @Composable
 fun Navigation() {
