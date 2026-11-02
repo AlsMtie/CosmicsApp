@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.example.cosmicsapp.data.CartStore
 import com.example.cosmicsapp.ui.components.CustomTextField
 import com.example.cosmicsapp.ui.components.CosmicsTopBar
+import com.example.cosmicsapp.ui.screens.viewmodels.CheckoutViewModel
 import com.example.cosmicsapp.ui.theme.*
 
 @Composable

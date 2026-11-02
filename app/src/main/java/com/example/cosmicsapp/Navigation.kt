@@ -1,11 +1,13 @@
 package com.example.cosmicsapp
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.cosmicsapp.data.supabase
 import com.example.cosmicsapp.ui.screens.AuthScreen
 import com.example.cosmicsapp.ui.screens.CartScreen
 import com.example.cosmicsapp.ui.screens.CatalogScreen
@@ -16,6 +18,7 @@ import com.example.cosmicsapp.ui.screens.OrderHistoryScreen
 import com.example.cosmicsapp.ui.screens.ProductDetailScreen
 import com.example.cosmicsapp.ui.screens.ProfileScreen
 import com.example.cosmicsapp.ui.screens.RegisterScreen
+import io.github.jan.supabase.auth.auth
 
 @Composable
 fun Navigation() {
@@ -42,7 +45,20 @@ fun Navigation() {
             ProductDetailScreen(navController, entry.arguments?.getLong("productId") ?: 0L)
         }
         composable("cart") { CartScreen(navController) }
-        composable("checkout") { CheckoutScreen(navController) }
+        composable("checkout") {
+            val isAuthorized = supabase.auth.currentUserOrNull() != null
+
+            if (isAuthorized) {
+                CheckoutScreen(navController)
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.navigate("login") {
+                        popUpTo("cart") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
         composable("order_history") { OrderHistoryScreen(navController) }
         composable(
             route = "order_detail/{orderId}",

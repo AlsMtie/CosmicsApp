@@ -49,8 +49,7 @@ fun ProductDetailScreen(
         bottomBar = {
             Column {
                 viewModel.product?.let { item ->
-                    val quantityInCart = CartStore.lines
-                        .firstOrNull { it.product.productId == item.productId }?.quantity ?: 0
+                    val quantityInCart = CartStore.lines.firstOrNull { it.product.productId == item.productId }?.quantity ?: 0
                     val stock = item.quantity?.trim()?.toIntOrNull() ?: 0
                     val outOfStock = stock <= 0
 
@@ -64,10 +63,7 @@ fun ProductDetailScreen(
                             .padding(horizontal = 20.dp, vertical = 8.dp)
                             .height(58.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BrandBlue,
-                            contentColor = BrandInk
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = BrandInk)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -83,43 +79,38 @@ fun ProductDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceEvenly
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxHeight()
-                                            .clickable { CartStore.removeOne(item.productId) },
+                                    Box(Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clickable { CartStore.removeOne(item.productId) },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Image(
-                                            painter = painterResource(R.drawable.minus),
-                                            contentDescription = "Уменьшить",
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                            painterResource(R.drawable.minus),
+                                            "Уменьшить",
+                                            modifier = Modifier.size(20.dp))
                                     }
                                     Text(
                                         quantityInCart.toString(),
                                         fontFamily = DefaultFont,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = BrandInk
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxHeight()
-                                            .clickable(enabled = quantityInCart < stock) { CartStore.add(item) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
+                                        color = BrandInk)
+                                    Box(Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clickable(enabled = quantityInCart < stock) { CartStore.add(item) },
+                                        contentAlignment = Alignment.Center)
+                                    {
                                         Image(
-                                            painter = painterResource(R.drawable.plus),
-                                            contentDescription = "Увеличить",
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                            painterResource(R.drawable.plus),
+                                            "Увеличить",
+                                            modifier = Modifier.size(20.dp))
                                     }
                                 }
                             } else {
                                 Text(
-                                    "В корзину",
+                                    text = if (outOfStock) "Нет в наличии" else "В корзину",
                                     fontFamily = DefaultFont,
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Medium
@@ -134,8 +125,10 @@ fun ProductDetailScreen(
                         }
                     }
                 }
-                CosmicsBottomNav("product") { route ->
-                    navController.navigate(route) { launchSingleTop = true }
+                CosmicsBottomNav("product") {
+                    navController.navigate(it) {
+                        launchSingleTop = true
+                    }
                 }
             }
         },

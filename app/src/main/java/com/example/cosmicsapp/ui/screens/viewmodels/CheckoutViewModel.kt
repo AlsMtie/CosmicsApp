@@ -1,19 +1,11 @@
-package com.example.cosmicsapp.ui.screens
+package com.example.cosmicsapp.ui.screens.viewmodels
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cosmicsapp.data.Brand
-import com.example.cosmicsapp.data.CartStore
-import com.example.cosmicsapp.data.Category
-import com.example.cosmicsapp.data.OrderInsert
-import com.example.cosmicsapp.data.OrderItemInsert
-import com.example.cosmicsapp.data.PickupPoint
-import com.example.cosmicsapp.data.Product
-import com.example.cosmicsapp.data.StoreOrder
-import com.example.cosmicsapp.data.UserProfile
+import com.example.cosmicsapp.data.*
 import com.example.cosmicsapp.data.supabase
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -76,7 +68,7 @@ class CheckoutViewModel : ViewModel() {
     fun submitOrder(onSuccess: (Long) -> Unit) {
         val userId = supabase.auth.currentUserOrNull()?.id
         if (userId == null) {
-            errorMessage = "Войдите в аккаунт, чтобы оформить заказ"
+            errorMessage = "Войдите в аккаунт"
             return
         }
         if (CartStore.lines.isEmpty()) {
@@ -96,10 +88,13 @@ class CheckoutViewModel : ViewModel() {
             errorMessage = "Введите имя и фамилию"
             return
         }
-        if (phone.isBlank()) {
-            errorMessage = "Введите номер телефона"
+
+        val cleanPhone = phone.filter { it.isDigit() }
+        if (cleanPhone.length != 11) {
+            errorMessage = "Введите 11 цифр номера телефона"
             return
         }
+
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
             errorMessage = "Введите корректный email"
             return
@@ -113,14 +108,14 @@ class CheckoutViewModel : ViewModel() {
                     createOrderInKotlin(
                         pickpointId = selectedPointId!!,
                         recipientName = recipientName,
-                        recipientPhone = phone.trim(),
+                        recipientPhone = cleanPhone,
                         recipientEmail = email.trim()
                     )
                 }
                 CartStore.clear()
                 onSuccess(orderId)
             } catch (e: Exception) {
-                errorMessage = e.message ?: "Не удалось оформить заказ"
+                errorMessage = "Ошибка оформления. Проверьте данные."
             } finally {
                 isSubmitting = false
             }

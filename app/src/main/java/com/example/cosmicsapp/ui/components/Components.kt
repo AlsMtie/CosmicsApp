@@ -20,10 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.Dp
+import com.example.cosmicsapp.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.cosmicsapp.R
+import androidx.compose.ui.unit.Dp
 import com.example.cosmicsapp.data.supabase
 import com.example.cosmicsapp.ui.theme.*
 import io.github.jan.supabase.auth.auth
@@ -166,7 +166,7 @@ fun CustomTextField(
     isPassword: Boolean = false,
     modifier: Modifier = Modifier,
     width: Dp = 306.dp,
-    height: Dp = 43.dp,
+    height: Dp = 48.dp,
     readOnly: Boolean = false
 ) {
     val hasValue = value.isNotEmpty()
@@ -191,7 +191,7 @@ fun CustomTextField(
         if (hasValue) {
             Text(
                 text = placeholder,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = 4.dp),
+                modifier = Modifier.align(Alignment.TopStart).padding(top = 2.dp),
                 fontFamily = DefaultFont,
                 fontSize = 9.sp,
                 color = BrandMuted
@@ -206,7 +206,9 @@ fun CustomTextField(
             cursorBrush = SolidColor(BrandPrimary),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            modifier = Modifier.fillMaxWidth().padding(top = if (hasValue) 10.dp else 0.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = if (hasValue) 15.dp else 0.dp),
             decorationBox = { innerTextField ->
                 Box {
                     if (!hasValue) {

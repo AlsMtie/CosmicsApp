@@ -17,21 +17,35 @@ class AuthViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
 
     fun login(onSuccess: () -> Unit) {
-        if (email.isBlank() || password.isBlank()) {
+        val cleanEmail = email.trim()
+        val cleanPassword = password.trim()
+
+        if (cleanEmail.isBlank() || cleanPassword.isBlank()) {
             errorMessage = "Заполните все поля"
             return
         }
+
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
             try {
                 supabase.auth.signInWith(Email) {
-                    this.email = email.trim()
-                    this.password = password
+                    this.email = cleanEmail
+                    this.password = cleanPassword
                 }
                 onSuccess()
             } catch (e: Exception) {
-                errorMessage = e.message ?: "Ошибка входа"
+                val rawError = e.message.orEmpty()
+                errorMessage = when {
+                    rawError.contains("Invalid login credentials", ignoreCase = true) ->
+                        "Неверный email или пароль"
+                    rawError.contains("Email not confirmed", ignoreCase = true) ->
+                        "Подтвердите email"
+                    rawError.contains("network", ignoreCase = true) ->
+                        "Проблемы с интернетом"
+                    else ->
+                        "Не удалось войти. Попробуйте позже"
+                }
             } finally {
                 isLoading = false
             }

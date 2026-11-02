@@ -70,6 +70,13 @@ class ProfileViewModel : ViewModel() {
             return
         }
 
+        val cleanPhone = phone.filter { it.isDigit() }
+        if (cleanPhone.isNotBlank() && cleanPhone.length != 11) {
+            statusMessage = "Телефон должен содержать 11 цифр"
+            isError = true
+            return
+        }
+
         viewModelScope.launch {
             isSaving = true
             statusMessage = null
@@ -79,17 +86,17 @@ class ProfileViewModel : ViewModel() {
                         mapOf(
                             "first_name" to firstName.trim(),
                             "last_name" to lastName.trim(),
-                            "phone" to phone.trim(),
+                            "phone" to cleanPhone,
                             "email" to email.trim()
                         )
                     ) { filter { eq("user_id", userId) } }
                 }
                 statusMessage = "Изменения сохранены"
                 isError = false
-                delay(3000) // Сообщение исчезнет через 3 сек
+                delay(3000)
                 statusMessage = null
             } catch (e: Exception) {
-                statusMessage = e.message ?: "Не удалось сохранить"
+                statusMessage = "Не удалось сохранить"
                 isError = true
             } finally {
                 isSaving = false

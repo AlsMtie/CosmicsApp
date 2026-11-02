@@ -26,24 +26,20 @@ class RegisterViewModel : ViewModel() {
 
     fun register(onSuccess: () -> Unit) {
         val cleanEmail = email.trim()
+        val cleanPassword = password.trim()
 
         when {
-            name.isBlank() || lastName.isBlank() || cleanEmail.isBlank() || password.isBlank() -> {
+            name.isBlank() || lastName.isBlank() || cleanEmail.isBlank() || cleanPassword.isBlank() -> {
                 message = "Заполните все поля"
                 isSuccess = false
                 return
             }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches() -> {
-                message = "Введите корректный email"
+            cleanPassword.length < 6 -> {
+                message = "Пароль слишком короткий (мин. 6 символов)"
                 isSuccess = false
                 return
             }
-            password.length < 6 -> {
-                message = "Пароль должен быть не менее 6 символов"
-                isSuccess = false
-                return
-            }
-            password != confirmPassword -> {
+            cleanPassword != confirmPassword.trim() -> {
                 message = "Пароли не совпадают"
                 isSuccess = false
                 return
@@ -58,7 +54,7 @@ class RegisterViewModel : ViewModel() {
             try {
                 supabase.auth.signUpWith(Email) {
                     this.email = cleanEmail
-                    this.password = password
+                    this.password = cleanPassword
                     this.data = buildJsonObject {
                         put("first_name", name.trim())
                         put("last_name", lastName.trim())
@@ -68,11 +64,22 @@ class RegisterViewModel : ViewModel() {
                 if (supabase.auth.currentUserOrNull() != null) {
                     onSuccess()
                 } else {
-                    message = "Аккаунт создан. Теперь войдите в приложение."
+                    message = "Аккаунт создан. Теперь войдите."
                     isSuccess = true
                 }
             } catch (e: Exception) {
-                message = e.message ?: "Не удалось создать аккаунт"
+                val rawError = e.message.orEmpty()
+                message = when {
+                    rawError.contains("already registered", ignoreCase = true) ||
+                            rawError.contains("User already exists", ignoreCase = true) ->
+                        "Этот email уже зарегистрирован"
+                    rawError.contains("Password should be", ignoreCase = true) ->
+                        "Слишком простой пароль"
+                    rawError.contains("network", ignoreCase = true) ->
+                        "Проблемы с интернетом"
+                    else ->
+                        "Ошибка регистрации. Попробуйте позже"
+                }
                 isSuccess = false
             } finally {
                 isLoading = false
